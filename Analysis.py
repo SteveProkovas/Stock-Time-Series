@@ -1,8 +1,3 @@
-# Σκοπός του παρόντος προγράμματος είναι η φόρτωση τιμών μετοχών (ανά ημέρα) από το yahoo finance (
-# https://finance.yahoo.com/), και στη συνέχεια ο υπολογισμός κάποιων βασικών στατιστικών μεγεθών και η σχεδίαση της
-# γραφικής παράστασης τιμών μεγεθών της συγκεκριμένης μετοχής που θα φορτώνεται κάθε φορά.
-
-# Εισαγωγή χρήσιμων (modules) της python
 import pandas
 import matplotlib.pyplot as plt
 import time
@@ -10,42 +5,42 @@ import datetime
 from datetime import date
 
 
-# Εισαγωγή χρονικής περιόδου για την οποία θα φορτωθούν τα δεδομένα
-def ts_timeperiod():
-    """Εισαγωγή χρονικής περιόδου για την οποία θα φορτωθούν τα δεδομένα. Επιστρέφει πλειάδα από δύο ημερομηνίες,
-    της μορφής (τελική, αρχική)."""
-
-    # Υποερώτημα 1: Εδώ μπαίνει η απάντηση για το υποερώτημα 1.
-
-    return end_date, start_date
+def ts_timeperiod(company, start_date, end_date):
+    start = dt.datetime.strptime(start_date, '%Y-%m-%d')
+    end = dt.datetime.strptime(end_date, '%Y-%m-%d')
+    df = pdr.get_data_yahoo(company, start=start, end=end)
+    df.to_csv(company + '.csv')
+    return df
 
 
-# Στατιστικά μέτρα τιμών μετοχής
-def ts_statistics(df):  # df pandas data frame
-    """Στατιστικά μέτρα τιμών μετοχής"""
-    print("\nΣτατιστικά μέτρα τιμών μετοχής")
-    stat = True
-    while stat:
-        # Επιλογή χρονοσειράς/στήλης
-        df_col = select_ts(df)
-        # Υποερώτημα 2: εδώ μπαίνει η απάντηση για το υποερώτημα 2
+def ts_statistics(df):
+    col_names = df.columns.tolist()
+    col_name = input(f"Enter column name to calculate statistics ({', '.join(col_names)}): ")
+    selected_cols = [col_name]
+    while True:
+        add_cols = input("Do you want to calculate statistics for additional columns (Y/N)? ")
+        if add_cols.lower() == 'y':
+            col_name = input(f"Enter column name ({', '.join(col_names)}): ")
+            selected_cols.append(col_name)
+        else:
+            break
+    print(f"Calculating statistics for {', '.join(selected_cols)}...")
+    for col_name in selected_cols:
+        col = df[col_name]
+        print(f"Statistics for {col_name}:")
+        print(f"Minimum: {np.min(col)}")
+        print(f"Maximum: {np.max(col)}")
+        print(f"Mean: {np.mean(col)}")
+        print(f"Standard Deviation: {np.std(col)}")
+        print(f"Variance: {np.var(col)}")
 
-        # Ερώτημα για συνέχιση
-        stat = confirm_continuation("Θέλετε να υπολογίσετε Στατιστικά Μέτρα και για άλλη Τιμή (Στήλη)?")
 
-
-# Γραφική παράσταση τιμών μετοχής
-def ts_plot(df):  # df pandas data frame
-    """Γραφική παράσταση τιμών μετοχής"""
-    print("\nΓραφική παράσταση τιμών μετοχής")
-    plt_flag = True
-    while plt_flag:
-        # Επιλογή στήλης
-        df_col = select_ts(df)
-        # Υποερώτημα 3: εδώ μπαίνει η απάντηση για το υποερώτημα 3
-
-        # Ερώτημα για συνέχιση
-        plt_flag = confirm_continuation("Θέλετε να σχεδιάσετε και άλλη Τιμή (Στήλη)?")
+def ts_plot(df):
+    plt.plot(df['date'], df[column])
+    plt.title(f"{column} over time")
+    plt.xlabel("Date")
+    plt.ylabel(column)
+    plt.show()
 
 
 # Βοηθητικές συναρτήσεις για εισόδους επιλογών - δίνονται έτοιμες
@@ -72,28 +67,22 @@ def select_ts(df):
 
 
 def confirm_continuation(msg):
-    """Λήψη απάντησης για συνέχιση ή όχι"""
     cont = input(msg + "(Y/N): ")
     while cont not in ["Y", "y", "N", "n"]:
         cont = input("Εισάγετε (Y)es ή (N)o: ")
     return True if cont.upper() == "Y" else False
 
 
-# Κυρίως πρόγραμμα
 if __name__ == "__main__":
-    # Επιλογή μετοχής (ticker)
     ticker = select_ticker()
-    # Εισαγωγή/μετατροπή ημερομηνιών έναρξης/λήξης για τα δεδομένα μετοχής   
-    end_date, start_date = ts_timeperiod()
+    start_date = input("Enter start date (YYYY-MM-DD): ")
+    end_date = input("Enter end date (YYYY-MM-DD): ")
     period1 = int(time.mktime(start_date.timetuple()))
     period2 = int(time.mktime(end_date.timetuple()))
-    # Φόρτωση χρονομετρών μετοχής από το Yahoo Finance
-    interval = '1d'  # 1d (one Day). Θα μπορούσαμε να χρησιμοποιήσουμε και 1m (one Month)
+    interval = '1d'
     query_string = f'https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period1={period1}&period2={period2}&interval={interval}&events=history&includeAdjustedClose=true'
-    stock = pd.read_csv(query_string)  # φορτώνει τη χρονοσειρά των τιμών των μετοχών σαν data frame
-    # Αποθήκευση των τιμών της μετοχής, τοπικά, σε αρχείο τύπου csv
+    stock = pd.read_csv(query_string)
     stock.to_csv(f"{ticker}.csv")
-    # Εμφάνιση στατιστικών
+    stock = ts_timeperiod(ticker, start_date, end_date)
     ts_statistics(stock)
-    # Εμφάνιση γραφικών παραστάσεων
     ts_plot(stock)
