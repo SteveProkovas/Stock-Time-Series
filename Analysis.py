@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import datetime as dt
-import pandas_datareader as pdr
+import pandas_datareader
 
 
 def ts_timeperiod(company, start_date, end_date):
