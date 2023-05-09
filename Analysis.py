@@ -1,46 +1,64 @@
+import datetime
+import yfinance as yf
 import matplotlib.pyplot as plt
 import numpy as np
-import yfinance as yf
 
 
 def ts_statistics(df):
     col_names = df.columns.tolist()
-    col_name = input(f"Enter column name to calculate statistics ({', '.join(col_names)}): ")
+    col_name = input(f"Enter a column to calculate statistics for: {', '.join(col_names)}: ")
     selected_cols = [col_name]
     while True:
-        add_cols = input("Do you want to calculate statistics for additional columns (Y/N)? ")
+        add_cols = input("Do you want to calculate statistics for another column? (Y/N): ")
         if add_cols.lower() == 'y':
-            col_name = input(f"Enter column name ({', '.join(col_names)}): ")
+            col_name = input(f"Enter a column to calculate statistics for: {', '.join(col_names)}: ")
             selected_cols.append(col_name)
         else:
             break
-    print(f"Calculating statistics for {', '.join(selected_cols)}...")
+    print("Statistics for stock prices:")
+    print(f"Stock price time series (columns): {', '.join(col_names)}")
     for col_name in selected_cols:
         col = df[col_name]
-        print(f"Statistics for {col_name}:")
-        print(f"Minimum: {np.min(col)}")
-        print(f"Maximum: {np.max(col)}")
-        print(f"Mean: {np.mean(col)}")
-        print(f"Standard Deviation: {np.std(col)}")
-        print(f"Variance: {np.var(col)}")
+        print(f"Column: {col_name}")
+        print(f"Min = {np.min(col):.4f}")
+        print(f"Max = {np.max(col):.4f}")
+        print(f"Mean = {np.mean(col):.4f}")
+        print(f"Standard Deviation = {np.std(col):.4f}")
+        print(f"Variance = {np.var(col):.4f}")
 
 
-def ts_plot(df, column):
-    plt.plot(df.index, df[column])
-    plt.title(f"{column} over time")
-    plt.xlabel("Date")
-    plt.ylabel(column)
+def ts_plot(df):
+    col_names = df.columns.tolist()
+    col_name = input(f"Enter a column to plot: {', '.join(col_names)}: ")
+    plt.plot(df.index, df[col_name])
+    plt.title(f"{col_name} over time")
     plt.show()
 
 
+def ts_timeperiod(ticker):
+    global start_date, end_date
+    while True:
+        start_date_str = input("Enter the start date (dd/mm/yyyy): ")
+        end_date_str = input("Enter the end date (dd/mm/yyyy): ")
+        try:
+            start_date = datetime.datetime.strptime(start_date_str, "%d/%m/%Y").date()
+            end_date = datetime.datetime.strptime(end_date_str, "%d/%m/%Y").date()
+        except ValueError:
+            print("Invalid date format. Please try again.")
+            continue
+        if start_date > end_date:
+            print("Start date cannot be later than end date. Please try again.")
+            continue
+        if end_date > datetime.date.today():
+            print("End date cannot be later than today's date. Please try again.")
+            continue
+        break
+    stock1 = yf.download(ticker, start=start_date, end=end_date)
+    return stock1
+
+
 if __name__ == "__main__":
-    ticker = "AAPL"  # Replace with your desired ticker symbol
-    start_date = input("Enter start date (YYYY-MM-DD): ")
-    end_date = input("Enter end date (YYYY-MM-DD): ")
-
-    stock = yf.download(ticker, start=start_date, end=end_date)
-
+    ticker = input("Enter a stock ticker symbol: ")
+    stock = ts_timeperiod(ticker)
     ts_statistics(stock)
-    column = input("Enter a column to plot: ")
-    ts_plot(stock, column)
-
+    ts_plot(stock)
