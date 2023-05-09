@@ -58,7 +58,7 @@ def ts_timeperiod(ticker):
 
 
 if __name__ == "__main__":
-    ticker = input("Enter a stock ticker symbol: ")
-    stock = ts_timeperiod(ticker)
+    ticker = select_ticker()
+    stock = ts_timeperiod()
     ts_statistics(stock)
     ts_plot(stock)
