@@ -1,64 +1,46 @@
-import datetime
-import yfinance as yf
-import matplotlib.pyplot as plt
-import numpy as np
+import requests
+import pandas as pd
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.graphics.charts.lineplots import LinePlot
+from reportlab.graphics.shapes import Drawing, String
 
+# Step 1: Retrieve stock data from Alpha Vantage API
+url = "https://www.alphavantage.co/query"
+params = {
+    "function": "TIME_SERIES_DAILY",
+    "symbol": "AAPL",
+    "outputsize": "compact",
+    "apikey": "YOUR_API_KEY"
+}
+response = requests.get(url, params=params)
+data = response.json()
 
-def ts_statistics(df):
-    col_names = df.columns.tolist()
-    col_name = input(f"Enter a column to calculate statistics for: {', '.join(col_names)}: ")
-    selected_cols = [col_name]
-    while True:
-        add_cols = input("Do you want to calculate statistics for another column? (Y/N): ")
-        if add_cols.lower() == 'y':
-            col_name = input(f"Enter a column to calculate statistics for: {', '.join(col_names)}: ")
-            selected_cols.append(col_name)
-        else:
-            break
-    print("Statistics for stock prices:")
-    print(f"Stock price time series (columns): {', '.join(col_names)}")
-    for col_name in selected_cols:
-        col = df[col_name]
-        print(f"Column: {col_name}")
-        print(f"Min = {np.min(col):.4f}")
-        print(f"Max = {np.max(col):.4f}")
-        print(f"Mean = {np.mean(col):.4f}")
-        print(f"Standard Deviation = {np.std(col):.4f}")
-        print(f"Variance = {np.var(col):.4f}")
+# Convert JSON data into a Pandas dataframe
+df = pd.DataFrame.from_dict(data['Time Series (Daily)'], orient='index')
+df = df.astype(float)
 
+# Step 3: Create a PDF document with a line chart based on the stock data
+pdf = canvas.Canvas("stock_data.pdf", pagesize=letter)
 
-def ts_plot(df):
-    col_names = df.columns.tolist()
-    col_name = input(f"Enter a column to plot: {', '.join(col_names)}: ")
-    plt.plot(df.index, df[col_name])
-    plt.title(f"{col_name} over time")
-    plt.show()
+# Add a title to the PDF document
+pdf.drawString(0.5 * inch, 10 * inch, "Apple Inc. Stock Data")
 
+# Add a line chart to the PDF document using ReportLab's LinePlot module
+drawing = Drawing(400, 200)
+data = [(i, v) for i, v in enumerate(df['4. close'])]
+lp = LinePlot()
+lp.x = 50
+lp.y = 50
+lp.height = 125
+lp.width = 300
+lp.data = [data]
+lp.lines[0].strokeColor = colors.blue
+lp.lines[0].strokeWidth = 2
+drawing.add(lp)
+pdf.draw(drawing)
 
-def ts_timeperiod(ticker):
-    global start_date, end_date
-    while True:
-        start_date_str = input("Enter the start date (dd/mm/yyyy): ")
-        end_date_str = input("Enter the end date (dd/mm/yyyy): ")
-        try:
-            start_date = datetime.datetime.strptime(start_date_str, "%d/%m/%Y").date()
-            end_date = datetime.datetime.strptime(end_date_str, "%d/%m/%Y").date()
-        except ValueError:
-            print("Invalid date format. Please try again.")
-            continue
-        if start_date > end_date:
-            print("Start date cannot be later than end date. Please try again.")
-            continue
-        if end_date > datetime.date.today():
-            print("End date cannot be later than today's date. Please try again.")
-            continue
-        break
-    stock1 = yf.download(ticker, start=start_date, end=end_date)
-    return stock1
-
-
-if __name__ == "__main__":
-    ticker = select_ticker()
-    stock = ts_timeperiod()
-    ts_statistics(stock)
-    ts_plot(stock)
+# Step 4: Save the PDF document
+pdf.save()
